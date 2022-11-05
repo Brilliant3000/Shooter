@@ -44,15 +44,17 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        CheckGround();
-        Jump();
         Crouch();
         Walk();
         Run();
         SpeedControll();
         ResetMoveSpeed();
     }
-
+    private void Update()
+    {
+        CheckGround();
+        Jump();
+    }
     private void Walk()
     {
         float moveInputX = Input.GetAxis("Horizontal");
@@ -89,7 +91,6 @@ public class PlayerMovement : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space) && grounded && readyToJump)
         {
-            rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             Invoke(nameof(ResetJump), jumpCooldown);
             readyToJump = false;

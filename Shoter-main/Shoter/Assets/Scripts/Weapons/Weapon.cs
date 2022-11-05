@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Weapon : MonoBehaviour
@@ -10,8 +8,8 @@ public class Weapon : MonoBehaviour
     public int maxAmmoMagazine;
     public int ammo;
     public int maxAmmo;
-    public float timeReload;
     public float range;
+    public bool shootOneClick;
 
     [Header("Animation")]
     public float kickBackForce;
@@ -22,31 +20,38 @@ public class Weapon : MonoBehaviour
     public Vector3 weaponAimPos;
     [Space]
     public Quaternion weaponAimRot;
+    [Space]    
+    [Space]   
     [Space]
 
     [Header("Sounds")]
-    [SerializeField] private AudioClip shotSound, reloadSound, noneAmmo, drop;
-    private AudioSource audioSource;
+    public float dropSoundCoolDown;
+    [SerializeField] protected AudioClip shotSound, noneAmmo, fall;
+    protected AudioSource audioSource;
+    
 
     public ParticleSystem shootPart;
     public GameObject hitPart;
     public WeaponUIController weaponUi;
 
-    [SerializeField] private LayerMask weaponLayer;
-    [SerializeField] private LayerMask weaponGfxLayer;
-    private Animator anim;
-    private GameObject _startPosition;
-    private bool _readyToShoot = true;
-    private bool _aiming;
-    private Camera _camera;
+    [SerializeField] private int weaponLayer;
+    [SerializeField] private int weaponLayerGfx;
+    [SerializeField] private GameObject[] weaponMash;
+    [SerializeField] private Collider[] weaponColliders;
 
-    void Start()
+    private GameObject _startPosition;
+    private bool _readyToPlaySound = true;
+    protected bool _readyToShoot = true;
+    private bool _aiming;
+    protected bool _reload;
+    protected Camera _camera;
+
+    private void Start()
     {
         _camera = Camera.main;
         audioSource = GetComponent<AudioSource>();
-        anim = GetComponent<Animator>();
     }
-    private void Update()
+    public void Update()
     {
         if (_startPosition != null && !_aiming)
         {
@@ -62,9 +67,9 @@ public class Weapon : MonoBehaviour
             transform.localPosition = Vector3.Lerp(transform.localPosition, _startPosition.transform.localPosition, aimSmooth * Time.deltaTime);
         }
     }
-    public void Shoot()
+    public virtual void Shoot()
     {
-        if (ammoMagazine > 0 && _readyToShoot)
+        if (ammoMagazine > 0 && _readyToShoot && !_reload)
         {
             _readyToShoot = false;
 
@@ -77,11 +82,11 @@ public class Weapon : MonoBehaviour
             shootPart.Play();
             ammoMagazine--;
 
-            weaponUi.UpdateAmmoUI(ammoMagazine: ammoMagazine, ammo: ammo);
+            weaponUi.UpdateAmmoUi(ammoMagazine: ammoMagazine, ammo: ammo);
 
             RaycastHit hit;
 
-            if (Physics.Raycast(_camera.transform.position, _camera.transform.forward, out hit, range))
+            if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, range))
             {
                 if (hit.collider != null)
                 {
@@ -94,71 +99,93 @@ public class Weapon : MonoBehaviour
         }
     }
 
-    public void Reload()
+    public virtual void StartReload()
     {
-        if (_readyToShoot == true && ammoMagazine < maxAmmoMagazine && ammo > 0)
+        if (!_reload && ammoMagazine < maxAmmoMagazine && ammo > 0)
         {
             _readyToShoot = false;
-
-            anim.SetTrigger("Reload");
+            _reload = true;
             Aiming(false);
-            audioSource.PlayOneShot(reloadSound);
-
-            int countAmmo = maxAmmoMagazine - ammoMagazine;
-
-            if (ammo > 0 && ammo >= countAmmo)
-            {
-                ammoMagazine += countAmmo;
-            }
-            else if (ammo >= 0 && ammo < countAmmo)
-            {
-                ammoMagazine += ammo;
-                ammo = 0;
-            }
-            if (ammo >= countAmmo)
-            {
-                ammo -= countAmmo;
-            }
-
-            Invoke(nameof(ReadyToShoot), timeReload);
         }
-    }
-    private void ReadyToShoot()
-    {
-        weaponUi.UpdateAmmoUI(ammoMagazine: ammoMagazine, ammo: ammo);
-        _readyToShoot = true;
-    }
-    public void SetWeaponPos(GameObject weaponPos)
-    {
-        weaponUi.ammoCountUi.SetActive(true);
-        weaponUi.UpdateAmmoUI(ammoMagazine: ammoMagazine, ammo: ammo);
-        _startPosition = weaponPos;
-    }
-    public void RemoveWeaponPos()
-    {
-        weaponUi.UpdateAmmoUI(ammoMagazine: ammoMagazine, ammo: ammo);
-        weaponUi.ammoCountUi.SetActive(false);
-        audioSource.Stop();
-        _startPosition = null;
     }
     public void Aiming(bool activity)
     {
-        if (activity)
+        if (activity && !_reload)
         {
             _aiming = true;
             weaponUi.SetActiveSightAim(false);
         }
-        else if(!activity)
+        else if (!activity && !_reload)
         {
             _aiming = false;
             weaponUi.SetActiveSightAim(true);
         }
     }
-    private void OnCollisionEnter(Collision collision)
-    { 
-        if (collision != null)
+    public virtual void PickUp(GameObject weaponPos)
+    {
+        foreach (var col in weaponColliders)
+            col.enabled = false;
+        
+        foreach (var gfx in weaponMash)
+            gfx.layer = weaponLayerGfx;
+
+        weaponUi.ammoCountUi.SetActive(true);
+        weaponUi.UpdateAmmoUi(ammoMagazine: ammoMagazine, ammo: ammo);
+        _startPosition = weaponPos;
+    }
+    public virtual void Drop()
+    {
+        foreach (var col in weaponColliders)
+            col.enabled = true;
+
+        foreach (var gfx in weaponMash)
+            gfx.layer = weaponLayer;
+
+        weaponUi.ammoCountUi.SetActive(false);
+        audioSource.Stop();
+        transform.parent = null;
+        _startPosition = null;
+    }
+    protected void ReadyToShoot()
+    {
+        _readyToShoot = true;
+    }
+    public virtual void EndReload()
+    {
+        int countAmmo = maxAmmoMagazine - ammoMagazine;
+
+        if (ammo > 0 && ammo >= countAmmo)
         {
-            audioSource.PlayOneShot(drop);
+            ammoMagazine += countAmmo;
+        }
+        else if (ammo >= 0 && ammo < countAmmo)
+        {
+            ammoMagazine += ammo;
+            ammo = 0;
+        }
+        if (ammo >= countAmmo)
+        {
+            ammo -= countAmmo;
+        }
+
+        weaponUi.UpdateAmmoUi(ammoMagazine: ammoMagazine, ammo: ammo);
+        ReadyToShoot();
+
+        _reload = false;
+      
+    }
+
+    private void ResetSound()
+    {
+        _readyToPlaySound = true;
+    }
+    private void OnCollisionEnter()
+    {
+        if (_readyToPlaySound)
+        {
+            audioSource.PlayOneShot(fall);
+            Invoke(nameof(ResetSound), dropSoundCoolDown);
+            _readyToPlaySound = false;
         }
     }
 }

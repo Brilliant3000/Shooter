@@ -11,7 +11,7 @@ public class WeaponUIController : MonoBehaviour
     {
         ammoCountUiText = ammoCountUi.GetComponent<TextMeshProUGUI>();
     }
-    public void UpdateAmmoUI(int ammoMagazine, int ammo)
+    public void UpdateAmmoUi(int ammoMagazine, int ammo)
     {
         ammoCountUiText.text = $"{ammoMagazine} / {ammo}";
     }

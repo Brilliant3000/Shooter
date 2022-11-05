@@ -45,7 +45,7 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4659242482378673836}
-  m_Enabled: 0
+  m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: d3d318090322d6e44ad0349b9072ecda, type: 2}
   m_CullingMode: 0
@@ -75,13 +75,15 @@ MonoBehaviour:
   maxAmmoMagazine: 30
   ammo: 60
   maxAmmo: 90
-  timeReload: 2
+  timeReload: 3.5
   range: 100
+  shootOneClick: 0
   kickBackForce: 2
   kickBackSmooth: 15
   aimSmooth: 10
-  weaponAimPos: {x: -0.2355555, y: 0.04, z: -0.2}
+  weaponAimPos: {x: -0.2355555, y: 0.03, z: -0.2}
   weaponAimRot: {x: 0.013000786, y: 0.015444179, z: 0.00020085358, w: -0.9997962}
+  dropSoundCoolDown: 0.5
   shotSound: {fileID: 8300000, guid: 8602b7d5cd15c1943a50aa53f171c8cf, type: 3}
   reloadSound: {fileID: 8300000, guid: 3c5c1d4d7b9307c458890a4beb12e4ae, type: 3}
   noneAmmo: {fileID: 8300000, guid: a9646a6173bb6ad4b951ea60adaaa407, type: 3}
@@ -89,6 +91,12 @@ MonoBehaviour:
   shootPart: {fileID: 4762446294822318134}
   hitPart: {fileID: 1000010844420130, guid: 4edabb1c0dde62743b137378c7d22980, type: 3}
   weaponUi: {fileID: 0}
+  weaponLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  weaponGfxLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!65 &4659242482378673832
 BoxCollider:
   m_ObjectHideFlags: 0

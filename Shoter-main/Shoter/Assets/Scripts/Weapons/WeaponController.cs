@@ -30,7 +30,8 @@ public class WeaponController : MonoBehaviour
     }
     private void Update()
     {
-        if (Input.GetKey(KeyCode.Mouse0) && weapon != null)
+
+        if (weapon != null && Input.GetKey(KeyCode.Mouse0) && !weapon.shootOneClick || weapon != null && Input.GetKeyDown(KeyCode.Mouse0) && weapon.shootOneClick)
         {
             Shoot();
         }
@@ -62,7 +63,7 @@ public class WeaponController : MonoBehaviour
     }
     private void Reload()
     {
-        weapon.Reload();
+        weapon.StartReload();
         aiming = false;
     }
     private void PickUp()
@@ -72,27 +73,25 @@ public class WeaponController : MonoBehaviour
         {
             if(hit.collider.gameObject != null)
             {
-                weapon = hit.collider.GetComponent<Weapon>();
-                weapon.SetWeaponPos(weaponPos);
+                weapon = hit.collider.GetComponentInParent<Weapon>();
+               
                 hit.rigidbody.isKinematic = true;
-                hit.collider.enabled = false;
-                hit.collider.gameObject.transform.SetParent(weaponPos.transform);
-                hit.collider.transform.rotation = weaponPos.transform.rotation;
-                hit.collider.gameObject.transform.position = weaponPos.transform.position;
+                hit.rigidbody.gameObject.transform.SetParent(weaponPos.transform);
+                hit.rigidbody.transform.rotation = weaponPos.transform.rotation;
+                hit.rigidbody.gameObject.transform.position = weaponPos.transform.position;
+                weapon.PickUp(weaponPos);
                 _audioSoursce.PlayOneShot(pickup);
             }
         }
     }
     private void Drop()
     {
-        weapon.RemoveWeaponPos();
-        Collider weaponCol = weapon.GetComponentInParent<Collider>();
+       
         Rigidbody weaponRb = weapon.GetComponent<Rigidbody>();
         weaponRb.isKinematic = false;
-        weaponCol.enabled = true;
         weaponRb.AddForce(_camera.transform.forward * dropForce, ForceMode.Impulse);
-        weaponCol.transform.parent = null;
         weapon.Aiming(false);
+        weapon.Drop();
         weapon = null;
     }
     private void Aiming(bool activity)
